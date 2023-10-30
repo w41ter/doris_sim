@@ -1,0 +1,82 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+/* ******* Do not commit this file unless you know what you are doing ******* */
+
+// **Note**: default db will be create if not exist
+defaultDb = "regression_test"
+
+jdbcUrl = "jdbc:mysql://${FE_QUERY_ENDPOINT}/?"
+jdbcUser = "root"
+jdbcPassword = ""
+
+feHttpAddress = "${FE_HTTP_ENDPOINT}"
+feHttpUser = "root"
+feHttpPassword = ""
+
+beHttpAddress = "127.0.0.1"
+instanceId = "default-instance-id"
+cloudUniqueId = ""
+
+// set DORIS_HOME by system properties
+// e.g. java -DDORIS_HOME=./
+suitePath = "${REGRESSION_SUITE_PATH}"
+dataPath = "${REGRESSION_DATA_PATH}"
+sf1DataPath = "${REGRESSION_SF1_DATA_PATH}"
+
+// do run docker test because pipeline not support build image now
+excludeDockerTest = true
+
+// will test <group>/<suite>.groovy
+// empty group will test all group
+testGroups = ""
+// empty suite will test all suite
+testSuites = ""
+// empty directories will test all directories
+testDirectories = ""
+
+// this groups will not be executed
+excludeGroups = ""
+// this suites will not be executed
+excludeSuites = "test_broker_load"
+// this directories will not be executed
+excludeDirectories = "segcompaction_p2"
+
+customConf1 = "test_custom_conf_value"
+
+// for test csv with header
+enableHdfs=${ENABLE_HDFS} // set to true if hdfs is ready
+hdfsFs = "${HDFS_FS}"
+hdfsUser = "${HDFS_USER}"
+hdfsPasswd = ""
+brokerName = "${BROKER_NAME}"
+
+s3Endpoint = "${STORE_ENDPOINT}"
+s3BucketName = "${STORE_BUCKET}"
+ak = "${STORE_AK}"
+sk = "${STORE_SK}"
+s3Region = "${STORE_REGION}"
+s3Provider = "${STORE_PROVIDER}"
+
+// enableJdbcTest：开启 jdbc 外表测试，需要启动 MySQL 和 Postgresql 的 container。
+// mysql_57_port 和 pg_14_port 分别对应 MySQL 和 Postgresql 的对外端口，默认为 3316 和 5442。
+// enableHiveTest：开启 hive 外表测试，需要启动 hive 的 container。
+// hms_port 对应 hive metastore 的对外端口，默认为 9183。
+enableEsTest=false
+es_6_port=19200
+es_7_port=29200
+es_8_port=39200

@@ -1,0 +1,155 @@
+#!/bin/bash
+
+# ==== Update your JAVA_HOME.
+JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-8-openjdk-amd64}
+
+# ==== The cluster name for this test
+CLUSTER_NAME=doris_test
+
+# ==== Set FE, BE OUTPUT dir
+
+# If you want to use pre-compiled binaries, please set BINARY_RESOURCE_URL.
+#
+# The URL of binaries come from the doris website. For doris 2.0.2
+# BINARY_RESOURCE_URL="https://apache-doris-releases.oss-accelerate.aliyuncs.com/apache-doris-2.0.2-bin-x64.tar.gz"
+
+# If you want to compile doris binaries by yourself, update below variables.
+# Change "/home/xxx/workspace/doris" to the root dir of your doris project.
+FE_OUTPUT_DIR="/home/xxx/workspace/doris/output/fe"
+BE_OUTPUT_DIR="/home/xxx/workspace/doris/output/be"
+BROKER_OUTPUT_DIR="/home/xxx/workspace/doris/output/apache_hdfs_broker"
+REGRESSION_HOME="/home/xxx/workspace/doris"
+
+# The run-regression-test.sh related dirs
+REGRESSION_SUITE_PATH="${REGRESSION_HOME}/regression-test/suites"
+REGRESSION_DATA_PATH="${REGRESSION_HOME}/regression-test/data"
+
+# ==== Upload below variables if you need to.
+#
+# An example for Tencent cloud object service COS.
+# STORE_AK=$AK
+# STORE_SK=$SK
+# STORE_BUCKET=$bucket_name
+# STORE_ENDPOINT=cos.ap-hongkong.myqcloud.com
+# STORE_EXTERNAL_ENDPOINT=cos.ap-hongkong.myqcloud.com
+# STORE_REGION=ap-hongkong
+# STORE_PROVIDER=COS
+
+STORE_AK=
+STORE_SK=
+STORE_BUCKET=
+STORE_ENDPOINT=
+STORE_REGION=
+STORE_PROVIDER=
+
+ENABLE_HDFS=false
+HDFS_FS=hdfs://127.0.0.1:9000
+HDFS_USER=$(whoami)
+BROKER_NAME=
+
+##################################################
+# The config callback
+
+function config_fe_1() {
+    echo "
+http_port = 8045
+rpc_port = 9025
+query_port = 9035
+edit_log_port = 9015
+priority_networks = 127.0.0.1/16
+
+sys_log_verbose_modules=org.apache.doris
+allow_replica_on_same_host = true
+
+# enable_bdbje_debug_mode = true
+# For regression-test
+"
+}
+
+function config_fe_2() {
+    echo "
+http_port = 8046
+rpc_port = 9026
+query_port = 9036
+edit_log_port = 9016
+priority_networks = 127.0.0.1/16
+
+sys_log_verbose_modules=org.apache.doris
+allow_replica_on_same_host = true
+
+# enable_bdbje_debug_mode = true
+# For regression-test
+"
+}
+
+function config_be_1() {
+    echo "
+be_port = 9061
+webserver_port = 8041
+heartbeat_service_port = 9051
+brpc_port = 8061
+priority_networks = 127.0.0.1/16
+# storage_root_path=\${DORIS_HOME}/storage1,medium:ssd,\${DORIS_HOME}/storage2/medium:hdd
+storage_root_path=\${DORIS_HOME}/storage,medium:ssd
+
+enable_java_support = true
+
+sys_log_verbose_modules=*
+sys_log_verbose_level=3
+"
+}
+
+function config_be_2() {
+    echo "
+be_port = 9062
+webserver_port = 8042
+heartbeat_service_port = 9052
+brpc_port = 8062
+priority_networks = 127.0.0.1/16
+# storage_root_path=\${DORIS_HOME}/storage1,medium:ssd,\${DORIS_HOME}/storage2/medium:hdd
+storage_root_path=\${DORIS_HOME}/storage,medium:ssd
+
+enable_java_support = true
+
+sys_log_verbose_modules=*
+sys_log_verbose_level=3
+    "
+}
+
+function config_be_3() {
+    echo "
+be_port = 9063
+webserver_port = 8043
+heartbeat_service_port = 9053
+brpc_port = 8063
+priority_networks = 127.0.0.1/16
+# storage_root_path=\${DORIS_HOME}/storage1,medium:ssd,\${DORIS_HOME}/storage2/medium:hdd
+storage_root_path=\${DORIS_HOME}/storage,medium:ssd
+
+enable_java_support = true
+
+sys_log_verbose_modules=*
+sys_log_verbose_level=3
+    "
+}
+
+function config_broker_1() {
+    echo "
+broker_ipc_port = 8000
+    "
+}
+
+######################################
+# Setup the config callback
+# Set to empty array will cause bootstrap.sh to skip the component.
+
+# The FE config callback
+FE_CONFIG=(config_fe_1)
+
+# The BE config callback
+# BE_CONFIG=(config_be_1 config_be_2 config_be_3)
+BE_CONFIG=(config_be_1)
+
+# BROKER_CONFIG=(config_broker_1)
+BROKER_CONFIG=()
+

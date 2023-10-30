@@ -1,0 +1,10 @@
+pkgs/
+*-tmp/
+*-cluster/
+*-test/
+*_cluster/
+*_test/
+
+config.sh
+regression-conf.groovy
+
