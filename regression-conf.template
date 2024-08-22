@@ -21,12 +21,24 @@
 defaultDb = "regression_test"
 
 jdbcUrl = "jdbc:mysql://${FE_QUERY_ENDPOINT}/?"
+targetJdbcUrl = "jdbc:mysql://${FE_QUERY_ENDPOINT}/?"
 jdbcUser = "root"
 jdbcPassword = ""
+
+ccrDownstreamUrl = "jdbc:mysql://${DOWNSTREAM_FE_QUERY_ENDPOINT}/?"
+ccrDownstreamUser = "root"
+ccrDownstreamPassword = ""
+
 
 feHttpAddress = "${FE_HTTP_ENDPOINT}"
 feHttpUser = "root"
 feHttpPassword = ""
+
+feSourceThriftAddress = "${FE_THRIFT_ENDPOINT}"
+feTargetThriftAddress = "${DOWNSTREAM_FE_THRIFT_ENDPOINT}"
+feSyncerUser = "root"
+feSyncerPassword = ""
+syncerAddress = "${SYNCER_ADDRESS}"
 
 beHttpAddress = "127.0.0.1"
 instanceId = "default-instance-id"
@@ -37,6 +49,7 @@ cloudUniqueId = ""
 suitePath = "${REGRESSION_SUITE_PATH}"
 dataPath = "${REGRESSION_DATA_PATH}"
 sf1DataPath = "${REGRESSION_SF1_DATA_PATH}"
+pluginPath = "${REGRESSION_PLUGIN_PATH}"
 
 // do run docker test because pipeline not support build image now
 excludeDockerTest = true

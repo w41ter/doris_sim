@@ -255,12 +255,16 @@ function clean_be() {
 }
 
 function deploy_broker() {
+    local NUM_BROKER=${#BROKER_CONFIG[@]}
+    if [[ ${NUM_BROKER} == 0 ]]; then
+        return
+    fi
+
     if [ ! -d ${DORIS_PKG_DIR}/fs_broker/lib ]; then
         mkdir -p ${DORIS_PKG_DIR}/fs_broker
         cp -r ${BROKER_OUTPUT_DIR}/* ${DORIS_PKG_DIR}/fs_broker/
     fi
 
-    local NUM_BROKER=${#BROKER_CONFIG[@]}
     for ((i=0;i<NUM_BROKER;i++)); do
         DORIS_HOME=${BROKER_HOME}/$i
         config=${BROKER_CONFIG[$i]}
@@ -456,10 +460,22 @@ function generate_regression_config() {
     # FE
     export FE_HTTP_ENDPOINT="127.0.0.1:$(fe_port 0 http_port)"
     export FE_QUERY_ENDPOINT="127.0.0.1:$(fe_query_port 0)"
+    export FE_THRIFT_ENDPOINT="127.0.0.1:$(fe_port 0 rpc_port)"
+
+    if [[ "${ENABLE_CCR_CLUSTER}" == "true" ]]; then
+        export DOWNSTREAM_FE_QUERY_ENDPOINT
+        export DOWNSTREAM_FE_THRIFT_ENDPOINT
+        export SYNCER_ADDRESS
+    else
+        export DOWNSTREAM_FE_QUERY_ENDPOINT="${FE_QUERY_ENDPOINT}"
+        export DOWNSTREAM_FE_THRIFT_ENDPOINT="${FE_THRIFT_ENDPOINT}"
+        export SYNCER_ADDRESS="127.0.0.1:9190"
+    fi
 
     # SUITE/DATA PATH
     export REGRESSION_DATA_PATH
     export REGRESSION_SUITE_PATH
+    export REGRESSION_PLUGIN_PATH
     export REGRESSION_SF1_DATA_PATH
 
     # S3/HDFS
@@ -492,7 +508,7 @@ function run_regression() {
 
     export DORIS_HOME=${DORIS_HOME:-.}
     export JAVA_HOME
-    ${REGRESSION_HOME}/run-regression-test.sh \
+    bash -x ${REGRESSION_HOME}/run-regression-test.sh \
         --conf ./regression-conf.groovy $@
 }
 
