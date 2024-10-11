@@ -379,7 +379,8 @@ function download_binaries() {
         rm -rf ${DOWNLOAD_BINARY_DIR}/$FILE
         ./ossutil64 -c .ossconfig cp ${URL} ${DOWNLOAD_BINARY_DIR}/
         pushd ${DOWNLOAD_BINARY_DIR} >/dev/null
-        tar zxvf ${PACKAGE_NAME} -s /output/${FILE}/
+        mkdir -p ${FILE}/
+        tar zxvf ${PACKAGE_NAME} -C ${FILE} --strip-components=1
         popd >/dev/null
     elif [[ "$URL" =~ ^https://apache-doris-releases.oss-accelerate.aliyuncs.com/ ]]; then
         PACKAGE_NAME=${URL##*/}
