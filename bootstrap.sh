@@ -53,7 +53,16 @@ function be_port() {
     local config=${BE_CONFIG[$i]}
     ${config} "${BE_HOME}/$i" "none" | \
         grep ${name} | \
-        tr -d ' ' |
+        tr -d ' ' | \
+        cut -d'=' -f2
+}
+
+function be_storage_root_path() {
+    local i="${1}"
+    local config=${BE_CONFIG[$i]}
+    ${config} "${BE_HOME}/$i" "none" | \
+        grep -E "^storage_root_path" | \
+        tr -d ' ' | \
         cut -d'=' -f2
 }
 
@@ -217,6 +226,18 @@ $(eval ${config})
 EOF
         fi
     done
+
+    local NUM_BE=${#BE_CONFIG[@]}
+    for ((i=0;i<NUM_BE;++i)); do
+        export DORIS_HOME=${BE_HOME}/$i
+        be_storage_root_path $i | sed 's/;/\n/g' | cut -d',' -f1 | \
+            while read storage_path; do
+                if [[ $storage_path =~ 'DORIS_HOME' ]] || [[ $storage_path == '/' ]]; then
+                    continue
+                fi
+                mkdir -p ${storage_path}
+            done
+    done
 }
 
 function start_be() {
@@ -250,6 +271,18 @@ function clean_be() {
         echo "Please stop be first"
         exit 1
     fi
+
+    local NUM_BE=${#BE_CONFIG[@]}
+    for ((i=0;i<NUM_BE;++i)); do
+        export DORIS_HOME=${BE_HOME}/$i
+        be_storage_root_path $i | sed 's/;/\n/g' | cut -d',' -f1 |
+            while read storage_path; do
+                if [[ $storage_path =~ 'DORIS_HOME' ]] || [[ $storage_path == '/' ]]; then
+                    continue
+                fi
+                rm -rf ${storage_path}
+            done
+    done
 
     rm -rf ${BE_HOME}
 }
@@ -324,7 +357,31 @@ function clean_broker() {
 
 function download_binaries() {
     URL=${BINARY_RESOURCE_URL:-""}
-    if [[ "$URL" =~ ^https://apache-doris-releases.oss-accelerate.aliyuncs.com/ ]]; then
+    if [[ "$URL" =~ "oss://" ]]; then
+        PACKAGE_NAME=${URL##*/}
+        FILE=${PACKAGE_NAME%%.tar.gz}
+        mkdir -p ${DOWNLOAD_BINARY_DIR}/
+
+        FE_OUTPUT_DIR="$(pwd)/${DOWNLOAD_BINARY_DIR}/${FILE}/fe"
+        BE_OUTPUT_DIR="$(pwd)/${DOWNLOAD_BINARY_DIR}/${FILE}/be"
+        BROKER_OUTPUT_DIR="$(pwd)/${DOWNLOAD_BINARY_DIR}/${FILE}/extensions/apache_hdfs_broker"
+
+        if [ -d ${DOWNLOAD_BINARY_DIR}/${FILE} ]; then
+            return
+        fi
+
+        if [ ! -f ossutil64 ] || [ ! -f .ossconfig ]; then
+            echo "ossutil64 or .ossconfig is not exists"
+            exit 1
+        fi
+
+        rm -rf ${DOWNLOAD_BINARY_DIR}/$PACKAGE_NAME
+        rm -rf ${DOWNLOAD_BINARY_DIR}/$FILE
+        ./ossutil64 -c .ossconfig cp ${URL} ${DOWNLOAD_BINARY_DIR}/
+        pushd ${DOWNLOAD_BINARY_DIR} >/dev/null
+        tar zxvf ${PACKAGE_NAME} -s /output/${FILE}/
+        popd >/dev/null
+    elif [[ "$URL" =~ ^https://apache-doris-releases.oss-accelerate.aliyuncs.com/ ]]; then
         PACKAGE_NAME=${URL##*/}
         FILE=${PACKAGE_NAME%%.tar.gz}
         mkdir -p ${DOWNLOAD_BINARY_DIR}/
