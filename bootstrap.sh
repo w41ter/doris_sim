@@ -29,6 +29,8 @@ BROKER_HOME=${CLUSTER_ROOT}/fs_broker
 # A dir to save download binaries
 DOWNLOAD_BINARY_DIR=pkgs
 
+LISTEN_ADDR=${LISTEN_ADDR:-"127.0.0.1"}
+
 function fe_port() {
     local i="$1"
     local name="$2"
@@ -73,7 +75,7 @@ function be_heartbeat_port() {
 function add_fe_cluster() {
     local NUM_FE=${#FE_CONFIG[@]}
     for ((i=1;i<NUM_FE;i++)); do
-        echo "ALTER SYSTEM ADD FOLLOWER \"127.0.0.1:$(fe_edit_log_port $i)\";" |
+        echo "ALTER SYSTEM ADD FOLLOWER \"${LISTEN_ADDR}:$(fe_edit_log_port $i)\";" |
             mysql -uroot -h127.0.0.1 -P$(fe_query_port 0) 2>/dev/null || true
     done
 }
@@ -82,7 +84,7 @@ function add_be_cluster() {
     local NUM_BE=${#BE_CONFIG[@]}
 
     for ((i=0;i<NUM_BE;i++)); do
-        echo "ALTER SYSTEM ADD BACKEND \"127.0.0.1:$(be_heartbeat_port $i)\"" |
+        echo "ALTER SYSTEM ADD BACKEND \"${LISTEN_ADDR}:$(be_heartbeat_port $i)\"" |
             mysql -uroot -h127.0.0.1 -P$(fe_query_port 0) 2>/dev/null || true
     done
 }
@@ -100,7 +102,7 @@ function add_broker_cluster() {
     local NUM_BROKER=${#BROKER_CONFIG[@]}
 
     for ((i=0;i<NUM_BROKER;i++)); do
-        echo "ALTER SYSTEM ADD BROKER broker_$i \"127.0.0.1:$(broker_ipc_port $i)\"" |
+        echo "ALTER SYSTEM ADD BROKER broker_$i \"${LISTEN_ADDR}:$(broker_ipc_port $i)\"" |
             mysql -uroot -h127.0.0.1 -P$(fe_query_port 0) 2>/dev/null || true
     done
 }
@@ -170,7 +172,7 @@ function start_fe() {
         else
             cd ${FE_HOME}/$i && \
                 DORIS_HOME=${FE_HOME}/$i ./bin/start_fe.sh --daemon \
-                    --helper 127.0.0.1:$(fe_edit_log_port 0)
+                    --helper ${LISTEN_ADDR}:$(fe_edit_log_port 0)
         fi
     done
 }
@@ -382,7 +384,7 @@ function download_binaries() {
         mkdir -p ${FILE}/
         tar zxvf ${PACKAGE_NAME} -C ${FILE} --strip-components=1
         popd >/dev/null
-    elif [[ "$URL" =~ ^https://apache-doris-releases.oss-accelerate.aliyuncs.com/ ]]; then
+    elif [[ "$URL" =~ ^https://apache-doris-releases.oss-accelerate.aliyuncs.com/ ]] || [[ "$URL" =~ "enterprise-doris-release-output" ]]; then
         PACKAGE_NAME=${URL##*/}
         FILE=${PACKAGE_NAME%%.tar.gz}
         mkdir -p ${DOWNLOAD_BINARY_DIR}/
@@ -516,9 +518,9 @@ function generate_regression_config() {
     local msg="$1"
 
     # FE
-    export FE_HTTP_ENDPOINT="127.0.0.1:$(fe_port 0 http_port)"
-    export FE_QUERY_ENDPOINT="127.0.0.1:$(fe_query_port 0)"
-    export FE_THRIFT_ENDPOINT="127.0.0.1:$(fe_port 0 rpc_port)"
+    export FE_HTTP_ENDPOINT="${LISTEN_ADDR}:$(fe_port 0 http_port)"
+    export FE_QUERY_ENDPOINT="${LISTEN_ADDR}:$(fe_query_port 0)"
+    export FE_THRIFT_ENDPOINT="${LISTEN_ADDR}:$(fe_port 0 rpc_port)"
 
     if [[ "${ENABLE_CCR_CLUSTER}" == "true" ]]; then
         export DOWNSTREAM_FE_QUERY_ENDPOINT
@@ -527,7 +529,7 @@ function generate_regression_config() {
     else
         export DOWNSTREAM_FE_QUERY_ENDPOINT="${FE_QUERY_ENDPOINT}"
         export DOWNSTREAM_FE_THRIFT_ENDPOINT="${FE_THRIFT_ENDPOINT}"
-        export SYNCER_ADDRESS="127.0.0.1:9190"
+        export SYNCER_ADDRESS=${SYNCER_ADDRESS:-"127.0.0.1:9190"}
     fi
 
     # SUITE/DATA PATH
